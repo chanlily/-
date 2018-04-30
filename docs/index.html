@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>贪吃蛇</title>
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0,minimum-scale=1.0, user-scalable=0;" name="viewport" />
+    <!--
+    第一创建背景
+    第二创建食物
+    第三创建蛇身
+    第四创建动作
+    -->
+    <style>
+        @media screen and (orientation: portrait) {
+            html,body{
+                width: 100%;
+                height:100%;
+                margin: 0;
+                overflow: hidden;
+                overflow-y:auto;
+            }
+            body::-webkit-scrollbar{
+                width:0;
+                height:0;
+                display: none;
+            }
+            #bg{
+                width:100%;
+                height:100%;
+                position: relative;
+                /*overflow: hidden;*/
+                background: #f1f1f1;
+                display: block;
+            }
+            #btn{
+                width:100%;
+                position: fixed;
+                bottom:0;
+            }
+            .bgdiv{
+                width:20px;
+                height:20px;
+                background: #f1f1f1;
+                float: left;
+            }
+            .snake{
+                width:20px;
+                height:20px;
+                border-radius: 50%;
+                background: #0e90d2;
+                position: absolute;
+            }
+            .food{
+                /*width:20px;*/
+                /*height:20px;*/
+                border-radius: 50%;
+                background: #bd362f;
+                position: absolute;
+            }
+        }
+        @media screen and (orientation: landscape) {
+            body{
+                height:100%;
+                margin:0;
+                overflow: hidden;
+            }
+            #bg{
+                width:100%;
+                height:100%;
+                position: relative;
+                /*overflow: hidden;*/
+                background: #f1f1f1;
+                display: block;
+            }
+            #btn{
+                width:100%;
+                position: fixed;
+                bottom:0;
+            }
+            .bgdiv{
+                width:20px;
+                height:20px;
+                background: #f1f1f1;
+                float: left;
+            }
+            .snake{
+                width:20px;
+                height:20px;
+                border-radius: 50%;
+                background: #0e90d2;
+                position: absolute;
+            }
+            .food{
+                /*width:20px;*/
+                /*height:20px;*/
+                border-radius: 50%;
+                background: #bd362f;
+                position: absolute;
+            }
+        }
+    </style>
+</head>
+<body>
+<div id="bg">
+    <div id="btn">
+        <button id="start">开始</button>
+        <button id="stop">暂停</button>
+        <button id="restart">重新开始</button>
+    </div>
+</div>
+<script src="https://cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script>
+<script>
+    //监听是否横屏
+    var width = window.innerWidth;
+    var height =  window.innerHeight;
+    if( width < height ){
+        bg =  document.getElementById('bg');
+        bg.style.width = height+"px";
+        bg.style.height = width+"px";
+        bg.style.marginTop = (height-width)/2 +"px";
+        bg.style.marginLeft =  -(height-width)/2+"px";
+        bg.style.transform = 'rotate(90deg)';
+//        bg.style.transform-origin = '50% 50%';
+    }
+    else{
+    }
+    var timer;
+    var Food_timer;
+    window.onload = function () {
+        //        createBg();
+        createSnake();
+        createFood();
+        document.body.style.height = window.innerHeight +"px";
+        document.getElementById('start').onclick = function () {
+            clearInterval(timer);
+            clearInterval(Food_timer);
+            timer = setInterval(function (){
+                snakeMove(diRection);
+            },300);
+            //            snakeMove(diRection);
+            Food_timer = setInterval("createFood()",2000);
+        };
+        document.getElementById('stop').onclick = function () {
+            clearInterval(timer);
+            clearInterval(Food_timer);
+        };
+        document.getElementById('restart').onclick = function () {
+            window.location.reload();
+        };
+    };
+    //创建运动
+    var diRection = 'left';
+    function snakeMove(direction) {
+        var snakeHead = snakeBody[0];//获取蛇头调用方向
+        var sh_offsetTop = document.getElementById('bg').offsetHeight;
+        var sh_offsetLwft = document.getElementById('bg').offsetWidth;
+        diRection = direction;
+        //蛇头移动，后面的跟着前面的位置移动
+        for(var i = snakeBody.length-1;i>0;i--){
+            snakeBody[i].style.left=snakeBody[i-1].offsetLeft+'px';
+            snakeBody[i].style.top = snakeBody[i-1].offsetTop+'px';
+        }
+        //蛇移动处理
+        switch(direction){
+                case'left':snakeHead.style.left = snakeHead.offsetLeft-20+'px';break;
+                case'right':snakeHead.style.left = snakeHead.offsetLeft+20+'px';break;
+                case'up':snakeHead.style.top=snakeHead.offsetTop-20+'px';break;
+                case'down':snakeHead.style.top = snakeHead.offsetTop+20+'px';break;
+            }
+        //事件处理一：碰壁
+        if (snakeHead.offsetTop == -20 || snakeHead.offsetTop == sh_offsetTop || snakeHead.offsetLeft == -20 || snakeHead.offsetLeft == sh_offsetLwft){
+            clearInterval(timer);
+            clearInterval(Food_timer);
+            console.log("ceshi1");
+            if (confirm('再来一次？')){
+                window.location.reload();
+            }
+            else{
+                document.getElementById('stop').disabled = "disabled";
+                document.getElementById('start').disabled = "disabled";
+            }
+        }
+
+        //事件处理二：蛇头咬自己
+        for(var j = 1;j<snakeBody.length;j++){
+            if (snakeHead.offsetLeft == snakeBody[j].offsetLeft && snakeHead.offsetTop == snakeBody[j].offsetTop){
+                clearInterval(timer);
+                clearInterval(Food_timer);
+                if(confirm('再来一次')){
+                    window.location.reload();
+                }
+                else{
+                    document.getElementById('stop').disabled = "disabled";
+                    document.getElementById('start').disabled = "disabled";
+                }
+            }
+        }
+
+        //        //事件处理三：碰到食物，吃了长在后面
+        //        if(snakeHead.offsetLeft == oFood.offsetLeft && snakeHead.offsetTop == oFood.offsetTop){
+        //            switch(direction){
+        //                case 'left':oFood.style.left = snakeBody[snakeBody.length - 1].offsetLeft+'px';break;
+        //                case 'right':oFood.style.left = snakeBody[snakeBody.length -1].offsetLeft+'px';break;
+        //                case'up':oFood.style.top =snakeBody[snakeBody.length-1].offsetTop + 'px';break;
+        //                case ' down':oFood.style.top=snakeBody[snakeBody.length-1].offsetTop + 'px';break;
+        //            }
+        //            snakeBody.push(oFood);
+        //            createFood();
+        //        }
+        for(var a = oFoodBox.length -1;a>0;a--){
+
+            var Range = snakeHead.offsetLeft - oFoodBox[a].offsetLeft;
+            var top = snakeHead.offsetTop - oFoodBox[a].offsetTop;
+            var oFoodWidth = oFoodBox[a].offsetWidth;
+            var n = 0;
+
+            if( Range >= -10 && Range <= 10 ){
+                if( top >= -10 && top <= 10){
+                    switch(direction){
+                        case 'left':oFood.style.left = snakeBody[snakeBody.length - 1].offsetLeft+'px';break;
+                        case 'right':oFood.style.left = snakeBody[snakeBody.length -1].offsetLeft+'px';break;
+                        case'up':oFood.style.top =snakeBody[snakeBody.length-1].offsetTop + 'px';break;
+                        case ' down':oFood.style.top=snakeBody[snakeBody.length-1].offsetTop + 'px';break;
+                    }
+                    if (oFoodWidth < 20){
+                        if(n=0){
+                            oFoodBox.splice(a,1);
+                        }
+                        n++;
+                    }
+                    else{
+                        //                        oFoodWidth = 10;
+                        oFoodBox[a].style.width = "20px";
+                        oFoodBox[a].style.height = "20px";
+                        snakeBody.push(oFoodBox[a]);
+                    }
+                    if(n =2){
+                        oFoodBox[a].style.width = "20px";
+                        oFoodBox[a].style.height = "20px";
+                        snakeBody.push(oFoodBox[a]);
+                        n=0;
+                    }
+                }
+            }
+        }
+
+        //键盘上下左右操作
+        document.onkeydown = function (e) {
+            //documnet不要换成window,出滚动条的话，window会导致窗口移动
+            var event =e || window.event;
+            var direction = event.keyCode;
+            if(width >height){
+                switch (direction){
+                    case 37:
+                        if(diRection != 'right'){
+                            snakeMove('left');
+                        }
+                        break;
+                    case 39:
+                        if(diRection !='left'){
+                            snakeMove('right');
+                        }
+                        break;
+                    case 38:
+                        if(diRection != 'down'){
+                            snakeMove('up');
+                        }
+                        break;
+                    case 40:
+                        if(diRection != 'up'){
+                            snakeMove('down');
+                        }
+                        break;
+                }
+            }
+            else{
+                switch (direction){
+                    case 37:
+                        if(diRection != 'up'){
+//                            snakeMove('left');
+                            snakeMove('down');
+                        }
+                        break;
+                    case 39:
+                        if(diRection !='down'){
+//                            snakeMove('right');
+                            snakeMove('up');
+                        }
+                        break;
+                    case 38:
+                        if(diRection != 'right'){
+//                            snakeMove('up');
+                            snakeMove('left');
+                        }
+                        break;
+                    case 40:
+                        if(diRection != 'left'){
+//                            snakeMove('down');
+                            snakeMove('right');
+                        }
+                        break;
+                }
+            }
+        };
+        //移动端屏幕上下操作
+        //滑动处理
+        var mybody = document.getElementsByTagName('body')[0];
+        var startX, startY, moveEndX, moveEndY, X, Y;
+        mybody.addEventListener('touchstart', function(e) {
+
+            e.preventDefault();
+
+            startX = e.touches[0].pageX;
+
+            startY = e.touches[0].pageY;
+
+        }, false);
+        mybody.addEventListener('touchmove', function(e) {
+            e.preventDefault();
+            moveEndX = e.changedTouches[0].pageX;
+            moveEndY = e.changedTouches[0].pageY;
+            X = moveEndX - startX;
+            Y = moveEndY - startY;
+            if(width >height){
+                if ( Math.abs(X) > Math.abs(Y) && X > 0 ) {
+                    if(diRection == 'right'){
+
+                    }
+                    else{
+                        snakeMove('right');
+                    }
+                    //                alert("向右");
+                }
+                else if ( Math.abs(X) > Math.abs(Y) && X < 0 ) {
+                    if(diRection == 'left'){
+
+                    }
+                    else{
+                        snakeMove('left');
+                    }
+                }
+                else if ( Math.abs(Y) > Math.abs(X) && Y > 0) {
+                    if(diRection == 'down'){
+
+                    }
+                    else{
+                        snakeMove('down');
+                    }
+                }
+                else if ( Math.abs(Y) > Math.abs(X) && Y < 0 ) {
+                    if(diRection == 'up'){
+
+                    }
+                    else{
+                        snakeMove('up');
+                    }
+                }
+                else{
+                    //                alert("没滑动");
+                }
+            }
+            else{
+                if ( Math.abs(X) > Math.abs(Y) && X > 0 ) {
+                    if(diRection == 'up'){
+
+                    }
+                    else{
+//                        snakeMove('right');
+                        snakeMove('up');
+                    }
+                    //                alert("向右");
+                }
+                else if ( Math.abs(X) > Math.abs(Y) && X < 0 ) {
+                    if(diRection == 'down'){
+
+                    }
+                    else{
+//                        snakeMove('left');
+                        snakeMove('down');
+                    }
+                }
+                else if ( Math.abs(Y) > Math.abs(X) && Y > 0) {
+                    if(diRection == 'right'){
+
+                    }
+                    else{
+//                        snakeMove('down');
+                        snakeMove('right');
+                    }
+                }
+                else if ( Math.abs(Y) > Math.abs(X) && Y < 0 ) {
+                    if(diRection == 'left'){
+
+                    }
+                    else{
+//                        snakeMove('up');
+                        snakeMove('left');
+                    }
+                }
+                else{
+                    //                alert("没滑动");
+                }
+            }
+        });
+    }
+
+    //创建背景
+    //    function createBg(){
+    //    var bg = document.getElementById('bg');
+    //    var oDiv;
+    //    var oDivWnum = 50;
+    //    var oDivHnum = 25;
+    //    for (var i=0;i<oDivWnum;i++){
+    //        for( var j=0;j<oDivHnum;j++){
+    //            oDiv=document.createElement('div');
+    //            oDiv.className = 'bgdiv';
+    //            bg.appendChild(oDiv);//appendChild() 方法可向节点的子节点列表的末尾添加新的子节点。
+    //        }
+    //    }
+    //}
+
+    //创建蛇身
+    var snakeBody = [];//创建数组，收集蛇身的长度，便于调用移动
+    function createSnake(){
+        var bg = document.getElementById('bg');
+        var sh_offsetLwft = document.getElementById('bg').offsetWidth;
+        var sh_left = parseInt(sh_offsetLwft/22);
+
+        var oDiv;
+        for (var i=0;i<3;i++){
+            var oDiv =document.createElement('div');
+            oDiv.className = 'snake';
+            oDiv.style.left = ( i + sh_left)*20+'px';
+            oDiv.style.top = '60px';
+            bg.appendChild(oDiv);
+            snakeBody.push(oDiv);
+        }
+    }
+
+    //创建食物
+    var oFoodBox = [];
+    var oFood;
+    function createFood(){
+        var bg = document.getElementById('bg');
+        var snakeLen = snakeBody.length;
+        var iLeft,iTop;
+        var max_width = 22;
+        var min_width = 10;
+
+        var sh_offsetTop = window.innerHeight;
+        var sh_offsetLwft = document.getElementById('bg').offsetWidth;
+
+        var sh_left = parseInt(sh_offsetLwft/20);
+        var sh_top = parseInt(sh_offsetTop/20);
+        iLeft = parseInt(Math.random()*sh_left)*20;
+        iTop = parseInt(Math.random()*sh_top)*20;
+
+        var width = getRandom(min_width,max_width);
+        var color = "#"+("00000"+((Math.random()*16777215+0.5)>>0).toString(16)).slice(-6);
+
+        oFood = document.createElement('div');
+        oFood.setAttribute("style","position:absolute;left:"+iLeft+"px;top:"+iTop+"px;width:"+width+"px;height:"+width+"px;background:"+color+";border-radius:50%");
+        //设置食物出现的框
+        //        var x = getRandom(x_right,x_left);
+        //        var y = getRandom(y_bottom,y_top);
+        for (var i =0; i <snakeLen;i++){
+            if (snakeBody[i].offsetLeft == iLeft && snakeBody[i].offsetHeight == iTop){
+                flag == false;
+                break;
+            }
+        }
+        var flag = true;//标识用于判断生成的食物div是否与蛇神div重合；
+        if(flag == true){
+            oFood.style.left = iLeft+'px';
+            oFood.style.top = iTop+'px';
+            bg.appendChild(oFood);
+            oFoodBox.push(oFood);
+        }else{
+            createFood();
+        }
+    }
+
+    function getRandom(max,min){
+        return Math.floor(Math.random()*(max-min+1)+min);
+    }
+</script>
+
+</body>
+</html>
